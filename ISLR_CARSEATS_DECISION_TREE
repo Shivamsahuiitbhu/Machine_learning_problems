@@ -1,0 +1,44 @@
+library(tree)
+library(ISLR)
+attach(Carseats)
+high<- rep("No",400)
+high[Carseats$Sales>8]="Yes"
+#high<- ifelse(Carseats$Sales<=8,"No","yes")
+Carseats<- data.frame(Carseats,high)
+names(Carseats)
+str(Carseats)
+dim(Carseats)
+tree.carseats<- tree(high~.-Sales,data = Carseats)
+summary(tree.carseats)
+plot(tree.carseats)
+text(tree.carseats,pretty = 0)
+
+
+# now we divide our data into train and test to get test error 
+set.seed(2)
+train<- sample(1:nrow(Carseats),200)
+Carseats.test<- Carseats[-train,]
+tree.carseats<- tree(high~.-Sales,data = Carseats,subset = train)
+pred.high<- predict(tree.carseats,type = "class",newdata = Carseats.test)
+table(Carseats.test$high,pred.high)
+mean(pred.high==Carseats.test$high)
+
+#now we check whether pruning the tree will improve result 
+
+cv.carseats<- cv.tree(tree.carseats,FUN = prune.misclass)
+cv.carseats
+
+# we will plot cv error with size and K 
+plot(cv.carseats$size,cv.carseats$dev,type="b",col="red")
+plot(cv.carseats$k,cv.carseats$dev,type="b",col="blue")
+
+#now we will prune the tree
+
+prune.carseats<- prune.misclass(tree.carseats,best = 9)
+plot(prune.carseats)
+text(prune.carseats,pretty=0)
+pred.high<- predict(prune.carseats,type = "class",newdata = Carseats.test)
+table(Carseats.test$high,pred.high)
+mean(pred.high==Carseats.test$high)
+
+
