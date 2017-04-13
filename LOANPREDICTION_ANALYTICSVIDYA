@@ -1,0 +1,19 @@
+loantrain<- read.csv("loantrain.csv")
+loantrain<- na.omit(loantrain)
+loan.glm<- glm(Loan_Status~Gender+Married+Dependents+Education+Self_Employed+CoapplicantIncome+ApplicantIncome+LoanAmount+Loan_Amount_Term+Credit_History+Property_Area,family = binomial,data = loantrain)
+summary(loan.glm)
+pred.prob<- predict(loan.glm,type = "response",data=loantrain)
+pred.status<- rep("N",length(pred.prob))
+pred.status[pred.prob>0.5]= "Y"
+table(loantrain$Loan_Status,pred.status)
+mean(pred.status==loantrain$Loan_Status)
+loantest<- read.csv("loantest.csv")
+loantest<- na.omit(loantest)
+loantest<- loantest[,-1]
+predprob.test<- predict(loan.glm,newdata = loantest[,-1],type = "response")
+Loan_Status<- rep("N",length(predprob.test))
+Loan_Status[predprob.test>0.5]= "Y"
+Loan_ID<- loantest$Loan_ID
+submit<- data.frame(Loan_ID,Loan_Status)
+write.csv(submit,file = "submission3.csv",col.names = TRUE)
+
