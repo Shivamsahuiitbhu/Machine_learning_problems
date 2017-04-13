@@ -1,0 +1,17 @@
+def.glm<- glm(default~balance+income,family = binomial,data = Default)
+summary(def.glm)
+pred.prob<- predict(def.glm,type = "response",data =Default)
+pred.status<- rep("No",length(pred.prob))
+pred.status[pred.prob>0.5]="Yes"
+table(Default$default,pred.status)
+mean(pred.status==Default$default)
+
+truth<- as.numeric(Default$default)
+pred<- prediction(pred.prob,truth)
+perf<- performance(pred,"tpr","fpr")
+plot(perf,col= "blue",main="ROC CURVE",wd=2)
+abline(0,1,col="red")
+auc.perf<- performance(pred,"auc")
+auc.perf@y.values
+acc.perf<- performance(pred,"acc")
+plot(acc.perf)
