@@ -1,0 +1,99 @@
+library(MASS)
+library(tree)
+library(ISLR)
+library(randomForest)
+
+
+dim(Boston)
+names(Boston)
+str(Boston)
+
+# now we will divide our data into test and train data
+set.seed(5)
+train<- sample(1:nrow(Boston),nrow(Boston)/2)
+boston.test<- Boston[-train,]
+tree.boston<- tree(medv~.,data = Boston,subset = train)
+summary(tree.boston)
+
+
+# plot the tree
+plot(tree.boston)
+text(tree.boston,pretty = 0)
+
+# now we will check whether we have prune the tree or not
+
+cv.boston<-cv.tree(tree.boston)
+cv.boston
+
+# we will prune the tree
+prune.boston<- prune.tree(tree.boston,best = 8)
+plot(prune.boston)
+text(prune.boston,pretty=0)
+pred.medv<- predict(prune.boston,newdata=boston.test)
+plot(pred.medv,boston.test$medv)
+abline(0,1)
+
+# mean square error
+
+mean((boston.test$medv-pred.medv)^2)
+
+# bagging the tree
+set.seed(6)
+bag.boston<- randomForest(medv~.,data=Boston,subset=train,mtry=13,importance=TRUE)
+summary(bag.boston)
+bag.boston
+pred.medv2<- predict(bag.boston,newdata = boston.test)
+plot(pred.medv2,boston.test$medv)
+abline(0,1)
+mean((boston.test$medv-pred.medv2)^2)
+
+#error vs no. of tree
+plot(bag.boston)
+
+#using random forest
+rf.boston<- randomForest(medv~.,data = Boston,subset = train,importance=TRUE,mtry=6)
+rf.boston
+pred.medv3<- predict(rf.boston,newdata = boston.test)
+plot(pred.medv2,boston.test$medv)
+abline(0,1)
+mean((boston.test$medv-pred.medv3)^2)
+
+# which are important variable ?
+importance(rf.boston)
+varImpPlot(rf.boston) #plot
+
+
+# boosting
+library(gbm)
+set.seed(7)
+boost.boston<- gbm(medv~.,data = Boston[train,],distribution = "gaussian",
+                   n.trees = 5000,interaction.depth = 4)
+summary(boost.boston)
+                   
+
+# relative interaction plot
+par(mfrow =c(1,2))
+plot(boost.boston ,i="rm")
+plot(boost.boston ,i="lstat")
+
+#prediction abd error 
+pred.medv4<- predict(boost.boston,newdata = boston.test,n.trees = 5000)
+plot(pred.medv4,boston.test$medv)
+abline(0,1)
+mean((boston.test$medv-pred.medv4)^2)
+
+
+#comparing all the trees
+par(mfrow=c(2,2))
+plot(pred.medv,boston.test$medv)
+abline(0,1)
+plot(pred.medv2,boston.test$medv)
+abline(0,1)
+plot(pred.medv3,boston.test$medv)
+abline(0,1)
+plot(pred.medv4,boston.test$medv)
+abline(0,1)
+
+
+
+
